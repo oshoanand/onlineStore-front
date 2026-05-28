@@ -1,21 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "./http/api-client";
 
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface Product {
   id: string;
   name: string;
   slug: string;
   sku: string | null;
   description: string;
+  detailedDescription: string | null;
   brand: string | null;
-  price: string | number;
-  discountedPrice: string | number | null;
+  price: number;
+  discountedPrice: number | null;
   inStock: number;
   status: "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK" | "ARCHIVED";
+  weight: string | null;
+  dimensions: string | null;
+  color: string | null;
+  tags: string[];
   averageRating: number;
   reviewCount: number;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  keywords: string | null;
   thumbImage: string | null;
-  tags: string[];
+  imageArray: string[];
+  createdAt: string;
 }
 
 export interface PaginatedProducts {
@@ -82,4 +97,17 @@ export const usePublicGroupedProducts = (
     // Cache the homepage data for 5 minutes to keep it blazing fast
     staleTime: 5 * 60 * 1000,
   });
+};
+
+/**
+ * Fetch a single product by its SEO-friendly slug
+ */
+export const getProductBySlug = async (slug: string): Promise<Product> => {
+  // Using native fetch for Next.js Server Components allows aggressive caching
+  // and deduplication, but we'll use your standard apiRequest structure.
+  const response = await apiRequest<{ success: boolean; data: Product }>({
+    url: `/products/public/slug/${slug}`,
+    method: "GET",
+  });
+  return response.data;
 };

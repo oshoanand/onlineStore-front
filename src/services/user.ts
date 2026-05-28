@@ -1,41 +1,55 @@
+"use client";
+
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, ApiError } from "@/services/http/api-client";
+
+// ==========================================
+// INTERFACES
+// ==========================================
 
 export interface RegisterResponse {
   id: string;
   token: string;
 }
 
-export interface UpdateProfileNameRequest {
-  name: string;
-  mobile: string;
+// 🚨 Aligned with the new backend updateProfileDetails controller
+export interface UpdateProfileDetailsRequest {
+  profileId: string;
+  fullName?: string;
+  email?: string;
 }
 
-export interface UpdateProfileNameResponse {
+export interface UpdateProfileDetailsResponse {
+  status: string;
   message: string;
-  name: string;
 }
 
 export interface UpdateProfileImageRequest {
   file: File;
-  mobile: string;
-}
-export interface UpdateProfileImageResponse {
-  message: string;
-  imageUrl?: string;
+  profileId: string;
 }
 
-// --- API Functions ---
+// 🚨 Aligned with the backend response structure
+export interface UpdateProfileImageResponse {
+  status: string;
+  data: {
+    profilePhoto: string;
+  };
+}
+
+// ==========================================
+// RAW API FUNCTIONS
+// ==========================================
 
 const updateProfileImage = async ({
   file,
-  mobile,
+  profileId,
 }: UpdateProfileImageRequest): Promise<UpdateProfileImageResponse> => {
   const formData = new FormData();
-  formData.append("profile_image", file);
-  formData.append("mobile", mobile);
+  formData.append("profileImage", file);
+
   return apiRequest<UpdateProfileImageResponse, FormData>({
-    url: "/api/users/update-profile-image",
+    url: `/users/profile/update-image/${profileId}`,
     method: "PUT",
     data: formData,
     headers: {
@@ -44,40 +58,49 @@ const updateProfileImage = async ({
   });
 };
 
-const updateProfileName = async (
-  data: UpdateProfileNameRequest,
-): Promise<UpdateProfileNameResponse> => {
-  return apiRequest<UpdateProfileNameResponse, UpdateProfileNameRequest>({
-    url: "/api/users/update-profile",
+const updateProfileDetails = async ({
+  profileId,
+  ...data
+}: UpdateProfileDetailsRequest): Promise<UpdateProfileDetailsResponse> => {
+  return apiRequest<
+    UpdateProfileDetailsResponse,
+    Omit<UpdateProfileDetailsRequest, "profileId">
+  >({
+    url: `/users/profile/update-details/${profileId}`,
     method: "PUT",
-    data,
-    // No specific Content-Type header needed; axios defaults to application/json
+    data, // Sending only the text fields (fullName, email)
   });
 };
 
-// NEW: Use Update Profile Name Hook
-export const useUpdateProfileName = (
-  onSuccess?: (data: UpdateProfileNameResponse) => void,
+// ==========================================
+// REACT QUERY HOOKS
+// ==========================================
+
+/**
+ * Hook to update text-based profile details (Name, Email)
+ */
+export const useUpdateProfileDetails = (
+  onSuccess?: (data: UpdateProfileDetailsResponse) => void,
   onError?: (error: ApiError) => void,
 ) => {
   return useMutation<
-    UpdateProfileNameResponse,
+    UpdateProfileDetailsResponse,
     ApiError,
-    UpdateProfileNameRequest
+    UpdateProfileDetailsRequest
   >({
-    mutationFn: updateProfileName,
+    mutationFn: updateProfileDetails,
     onSuccess,
     onError,
   });
 };
 
-// --- React Query Hooks ---
-
+/**
+ * Hook to upload and update the user's profile image
+ */
 export const useUpdateProfileImage = (
   onSuccess?: (data: UpdateProfileImageResponse) => void,
   onError?: (error: ApiError) => void,
 ) => {
-  // Generics: <Response, Error, RequestType>
   return useMutation<
     UpdateProfileImageResponse,
     ApiError,

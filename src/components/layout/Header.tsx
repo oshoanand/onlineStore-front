@@ -258,14 +258,19 @@ export default function Header() {
                 className="flex items-center justify-center w-10 h-10 lg:w-auto lg:px-2 lg:h-12 gap-2 rounded-xl text-slate-600 hover:text-brand-primary hover:bg-brand-primary/5 transition-all focus:outline-none"
               >
                 {session?.user?.image ? (
-                  <Image
+                  <img
                     src={session.user.image}
                     alt="User"
-                    width={32}
-                    height={32}
-                    className="rounded-full object-cover border-2 border-white shadow-sm"
+                    className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm"
                   />
                 ) : (
+                  // <Image
+                  //   src={session.user.image}
+                  //   alt="User"
+                  //   width={32}
+                  //   height={32}
+                  //   className="rounded-full object-cover border-2 border-white shadow-sm"
+                  // />
                   <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
                     <User size={18} />
                   </div>

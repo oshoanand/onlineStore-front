@@ -1,31 +1,33 @@
-// src/services/support.ts
+"use client";
+
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest, ApiError } from "@/services/http/api-client";
+import { apiRequest } from "@/services/http/api-client";
 
 export interface CreateSupportTicketRequest {
   mobile: string;
-  support_type: string; // "BUG", "FEATURE", "OTHER"
+  supportType: string;
   description: string;
-  proof?: File | null;
+  attachment?: File | null;
 }
 
 const createSupportTicket = async ({
   mobile,
-  support_type,
+  supportType,
   description,
-  proof,
+  attachment,
 }: CreateSupportTicketRequest) => {
   const formData = new FormData();
   formData.append("mobile", mobile);
-  formData.append("support_type", support_type);
+  formData.append("supportType", supportType);
   formData.append("description", description);
 
-  if (proof) {
-    formData.append("proof", proof);
+  // Match the key exactly to `upload.single("attachment")` from the backend
+  if (attachment) {
+    formData.append("attachment", attachment);
   }
 
   return apiRequest({
-    url: "/api/support/create",
+    url: "/users/support/create/ticket", // Assuming apiRequest adds the base /api
     method: "POST",
     data: formData,
     headers: {
@@ -34,13 +36,8 @@ const createSupportTicket = async ({
   });
 };
 
-export const useCreateSupportTicket = (
-  onSuccess?: () => void,
-  onError?: (error: ApiError) => void,
-) => {
+export const useCreateSupportTicket = () => {
   return useMutation({
     mutationFn: createSupportTicket,
-    onSuccess,
-    onError,
   });
 };
