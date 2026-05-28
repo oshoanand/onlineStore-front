@@ -29,7 +29,12 @@ export interface PaginatedProducts {
   };
 }
 
-// Hook to fetch public products
+export interface GroupedProductsResponse {
+  success: boolean;
+  data: Record<string, Product[]>;
+}
+
+// Hook to fetch public products (List)
 export const usePublicProducts = (params?: {
   page?: number;
   limit?: number;
@@ -45,12 +50,36 @@ export const usePublicProducts = (params?: {
       if (params?.category) queryParams.append("category", params.category);
       if (params?.sort) queryParams.append("sort", params.sort);
 
-      // Assuming your product-service exposes a public route for catalog browsing
       const res = await apiRequest<PaginatedProducts>({
         method: "GET",
         url: `/products/public?${queryParams.toString()}`,
       });
       return res;
     },
+  });
+};
+
+// ==========================================
+// 🚨 Hook for Grouped Homepage Products
+// ==========================================
+export const usePublicGroupedProducts = (
+  tags: string[] = ["Bestseller", "New", "Sale"],
+) => {
+  return useQuery({
+    queryKey: ["public-grouped-products", tags],
+    queryFn: async () => {
+      const queryParams = new URLSearchParams();
+      if (tags.length > 0) {
+        queryParams.append("tags", tags.join(","));
+      }
+
+      const res = await apiRequest<GroupedProductsResponse>({
+        method: "GET",
+        url: `/products/public/grouped?${queryParams.toString()}`,
+      });
+      return res;
+    },
+    // Cache the homepage data for 5 minutes to keep it blazing fast
+    staleTime: 5 * 60 * 1000,
   });
 };

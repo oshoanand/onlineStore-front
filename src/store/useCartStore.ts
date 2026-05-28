@@ -52,6 +52,6 @@ export const useCartStore = create<CartState>()(
           0,
         ),
     }),
-    { name: "maachh-cart-storage" },
+    { name: "onlineshop-cart-storage" },
   ),
 );

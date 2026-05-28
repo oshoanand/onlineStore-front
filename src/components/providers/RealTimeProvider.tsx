@@ -26,13 +26,6 @@ export default function RealTimeProvider({
     setTypingStatus,
   } = useAppStore();
 
-  // ---------------------------------------------------------------------------
-  // CRITICAL OPTIMIZATION: Refs for volatile state
-  // We use Refs for `pathname` and Zustand actions so we can access their latest
-  // values inside the socket listeners WITHOUT putting them in the useEffect
-  // dependency array. If we put `pathname` in the dependency array, the socket
-  // would disconnect and reconnect every single time the user clicks a link!
-  // ---------------------------------------------------------------------------
   const pathnameRef = useRef(pathname);
   useEffect(() => {
     pathnameRef.current = pathname;
@@ -44,6 +37,7 @@ export default function RealTimeProvider({
     setOnlineUser,
     setTypingStatus,
   });
+
   useEffect(() => {
     actionsRef.current = {
       incrementUnread,
@@ -56,57 +50,67 @@ export default function RealTimeProvider({
   useEffect(() => {
     if (status !== "authenticated" || !session?.accessToken) return;
 
-    // 1. Initialize Socket.io
-    const socketInstance = io(process.env.NEXT_PUBLIC_API_URL!, {
-      path: "/notifications/socket.io",
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    const baseUrl = rawApiUrl.replace(/\/api\/?$/, "");
+
+    const socketInstance = io(baseUrl, {
+      path: "/api/notifications/socket.io",
       auth: { token: session.accessToken },
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
     });
 
     setSocket(socketInstance);
 
-    socketInstance.on("connect", () =>
-      console.log("✅ Real-time WS connected"),
-    );
+    socketInstance.on("connect", () => {
+      console.log("✅ Real-time WS connected to Gateway");
+    });
 
-    // 2. Handle In-App Notifications (Bell Icon)
-    socketInstance.on("new_notification", (notification) => {
+    socketInstance.on("connect_error", (error) => {
+      console.error("❌ WS Connection Error:", error.message);
+    });
+
+    //  IN-APP NOTIFICATIONS
+    socketInstance.on("new_notification", (payload) => {
+      // Unwrap the payload sent from backend { type: "NEW_NOTIFICATION", data: { title, message } }
+      const newNotif = payload.data || payload;
+
       actionsRef.current.incrementUnread();
 
-      // Instantly update React Query cache without fetching
+      // Instantly update React Query cache (Corrected structure)
       queryClient.setQueryData(["notifications"], (old: any) => {
-        if (!old) return old;
+        if (!old) return { notifications: [newNotif], unreadCount: 1 };
         return {
           ...old,
-          data: {
-            ...old.data,
-            notifications: [notification, ...old.data.notifications],
-            unreadCount: old.data.unreadCount + 1,
-          },
+          notifications: [newNotif, ...(old.notifications || [])],
+          unreadCount: (old.unreadCount || 0) + 1,
         };
       });
 
-      toast({ title: notification.title, description: notification.message });
+      // Show the Toast notification correctly
+      toast({
+        variant: "success",
+        title: newNotif.title,
+        description: newNotif.message,
+      });
     });
 
-    // 3. Handle Chat Messages
+    //  CHAT MESSAGES
     socketInstance.on("receive_message", (message) => {
-      // Add message to chat history cache
       queryClient.setQueryData(["chat-history", message.roomId], (old: any) => {
         if (!old) return old;
-        return { ...old, data: [...old.data, message] };
+        // Fix matching structure for chat array
+        const messageArray = Array.isArray(old) ? old : old.data || [];
+        return { ...old, data: [...messageArray, message] };
       });
 
-      // Update Chat Room List (Sidebar)
       queryClient.invalidateQueries({ queryKey: ["chat-rooms"] });
 
-      // Check if user is currently looking at the chat page
       if (!pathnameRef.current.startsWith("/chat")) {
-        // Increment the blue chat badge in the Header
         actionsRef.current.incrementUnreadChat();
 
-        // Show a quick toast previewing the message
         toast({
-          variant: "success",
+          variant: "default",
           title: "New Message",
           description: message.content
             ? message.content.substring(0, 40) +
@@ -116,7 +120,6 @@ export default function RealTimeProvider({
       }
     });
 
-    // 4. Presence & Typing
     socketInstance.on("user_status_change", ({ userId, isOnline }) => {
       actionsRef.current.setOnlineUser(userId, isOnline);
     });
@@ -129,8 +132,6 @@ export default function RealTimeProvider({
       socketInstance.disconnect();
       setSocket(null);
     };
-
-    // Notice how pathname and zustand actions are intentionally NOT in this array.
   }, [status, session, queryClient, setSocket, toast]);
 
   return <>{children}</>;

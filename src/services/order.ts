@@ -1,125 +1,108 @@
 "use client";
 
-import {
-  useQuery,
-  useMutation,
-  keepPreviousData,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { apiRequest, ApiError } from "@/services/http/api-client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "./http/api-client";
 
-// --- Types ---
+// ==========================================
+// INTERFACES
+// ==========================================
 export interface OrderItem {
   id: string;
   productId: string;
   productName: string;
   quantity: number;
-  priceAtTime: string | number;
+  priceAtTime: number;
+}
+
+export interface OrderHistory {
+  id: string;
+  action: string;
+  oldStatus: string | null;
+  newStatus: string;
+  notes: string;
+  createdAt: string;
 }
 
 export interface Order {
   id: string;
+  orderId: string;
+  totalAmount: number;
+  shippingCost: number;
+  status: string;
+  paymentMethod: string;
+  paymentType: string;
+  deliveryAuthCode: string;
   createdAt: string;
-  totalAmount: string | number;
-  status:
-    | "PENDING"
-    | "AWAITING_PAYMENT"
-    | "CONFIRMED"
-    | "PROCESSING"
-    | "OUT_FOR_DELIVERY"
-    | "DELIVERED"
-    | "CANCELLED";
   items: OrderItem[];
+  history: OrderHistory[];
+  shippingAddress: {
+    city: string;
+    street: string;
+    state?: string;
+  };
 }
 
-export interface AddressPayload {
-  street: string;
-  city: string;
-  zip: string;
-  phone: string;
-}
+// ==========================================
+// RAW API FUNCTIONS
+// ==========================================
 
-export interface CreateOrderRequest {
-  items: {
-    productId: string;
-    productName: string;
-    quantity: number;
-    priceAtTime: number;
-  }[];
-  shippingAddress: AddressPayload;
-}
-
-// --- API Functions ---
-
-const getOrders = async (): Promise<Order[]> => {
-  const response = await apiRequest<{ data: Order[] }>({
-    url: "/orders",
+/**
+ * Fetch all orders for the authenticated user
+ */
+export const fetchUserOrdersApi = async (): Promise<Order[]> => {
+  const response = await apiRequest<{ status: string; data: Order[] }>({
     method: "GET",
+    url: "/orders",
   });
+  // Return just the data array to make React Query usage cleaner
   return response.data;
 };
 
-const getOrderById = async (orderId: string): Promise<Order> => {
-  const response = await apiRequest<{ data: Order }>({
-    url: `/orders/${orderId}`,
-    method: "GET",
-  });
-  return response.data;
-};
-
-const createOrder = async (payload: CreateOrderRequest): Promise<Order> => {
-  const response = await apiRequest<{ data: Order }>({
-    url: "/orders",
+/**
+ * Confirm delivery using the secure PIN
+ */
+export const verifyDeliveryPinApi = async ({
+  orderId,
+  pin,
+}: {
+  orderId: string;
+  pin: string;
+}) => {
+  return apiRequest<{ success: boolean; message: string }>({
     method: "POST",
-    data: payload,
+    url: `/orders/courier/${orderId}/verify`,
+    data: { deliveryAuthCode: pin },
   });
-  return response.data;
 };
 
-// --- Hooks ---
+// ==========================================
+// REACT QUERY CUSTOM HOOKS
+// ==========================================
 
 /**
- * Fetch all orders for the currently authenticated user.
+ * Hook to fetch and cache the user's orders.
+ * Automatically handles loading and error states.
  */
-export function useOrdersQuery(enabled: boolean = true) {
+export const useUserOrders = () => {
   return useQuery({
-    queryKey: ["orders"],
-    queryFn: getOrders,
-    enabled, // CRITICAL: Don't run until session is authenticated
-    placeholderData: keepPreviousData,
+    queryKey: ["orders", "user"],
+    queryFn: fetchUserOrdersApi,
+    staleTime: 1000 * 60 * 5, // Cache data for 5 minutes before background refetching
   });
-}
+};
 
 /**
- * Fetch a specific order by ID.
+ * Hook to verify the delivery PIN.
+ * Automatically invalidates the order cache upon success to show the new "DELIVERED" status.
  */
-export function useOrderByIdQuery(orderId?: string) {
-  return useQuery({
-    queryKey: ["orders", orderId],
-    queryFn: () => getOrderById(orderId!), // The '!' asserts orderId is defined (safeguarded by 'enabled')
-    enabled: !!orderId,
-    placeholderData: keepPreviousData,
-  });
-}
-
-/**
- * Create a new order.
- * Automatically invalidates the "orders" cache upon success to ensure the order list is fresh.
- */
-export function useCreateOrder(
-  onSuccess?: (data: Order) => void,
-  onError?: (error: ApiError) => void,
-) {
+export const useVerifyDeliveryPin = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Order, ApiError, CreateOrderRequest>({
-    mutationFn: createOrder,
-    onSuccess: (data) => {
-      // Automatically refresh the order history whenever a new order is placed!
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-
-      if (onSuccess) onSuccess(data);
+  return useMutation({
+    mutationFn: verifyDeliveryPinApi,
+    onSuccess: () => {
+      // Instantly trigger a background refetch of the orders list so the UI updates
+      queryClient.invalidateQueries({ queryKey: ["orders", "user"] });
     },
-    onError,
   });
-}
+};

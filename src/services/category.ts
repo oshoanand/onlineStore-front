@@ -8,7 +8,7 @@ export interface Category {
   description: string | null;
   thumbImage: string | null;
   parentId: string | null;
-  children: Category[]; // Recursive self-relation from backend tree
+  children: Category[];
   createdAt?: string;
   updatedAt?: string;
 }
