@@ -1,15 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-  /* Define Online Shop Brand Colors */
-  --color-brand-primary: #0284c7; /* Ocean Blue */
-  --color-brand-secondary: #0ea5e9;
-  --color-brand-accent: #f59e0b; /* Golden accent */
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
+  /* ========================================== */
+  /* Online Shop Brand Colors                   */
+  /* ========================================== */
 
-  /* Dynamically register iOS/Android safe areas into Tailwind's spacing scale */
-  /* This automatically unlocks classes like: pb-safe, pt-safe, mb-safe, gap-safe */
+  /* Primary: Vibrant Orange-Red (Buttons, Badges, Active States) */
+  --color-brand-primary: #ff5226;
+  /* Primary Hover: Slightly darker for button hover states */
+  --color-brand-primary-hover: #e6421c;
+
+  /* Secondary: Bright Yellow (Warnings, Sale Tags, Accents) */
+  --color-brand-secondary: #ffdd00;
+
+  /* Muted: Dark Slate/Navy (Secondary text, Footers, Dark Cards) */
+  --color-brand-muted: #252a38;
+  /* Light Muted: A softer grayish-blue for borders/dividers */
+  --color-brand-muted-light: #8b95a5;
+
+  /* ========================================== */
+  /* Structural UI Colors                       */
+  /* ========================================== */
+
+  /* Background: A very slightly cool off-white to balance the warm primary */
+  --color-background: #f4f5f8;
+
+  /* Surface: Pure white for product cards and dropdowns */
+  --color-brand-surface: #ffffff;
+
+  /* Foreground: Very dark slate (derived from #252A38) for deep contrast text */
+  --color-foreground: #151821;
+
+  /* ========================================== */
+  /* Safe Area Spacing (iOS/Android)            */
+  /* ========================================== */
   --spacing-safe: env(safe-area-inset-bottom);
   --spacing-safe-top: env(safe-area-inset-top);
 }
@@ -22,9 +46,7 @@
   }
 }
 
-/* 
-  OPTIONAL: If you still strictly want a custom utility class 
-  that isn't part of the spacing scale, use the new v4 @utility directive:
+/* OPTIONAL: Custom utility class for safe-area padding
 */
 @utility pb-safe-legacy {
   padding-bottom: env(safe-area-inset-bottom);

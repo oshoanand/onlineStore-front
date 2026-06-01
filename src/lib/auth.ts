@@ -89,7 +89,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email;
         (session.user as any).role = token.role;
         (session.user as any).mobile = token.mobile;
-        (session as any).accessToken = token.accessToken;
+        (session.user as any).accessToken = token.accessToken;
       }
       return session;
     },

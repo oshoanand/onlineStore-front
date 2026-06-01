@@ -999,6 +999,7 @@ export default function CheckoutPage() {
         try {
           setIsProfileLoading(true);
           const response = await fetchUserProfile();
+
           if (response.status === "success" && response.data?.addresses) {
             const userAddresses = response.data.addresses;
             setAddresses(userAddresses);

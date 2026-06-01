@@ -7,20 +7,31 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { clsx } from "clsx";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  ArrowRight,
+  ShoppingBag,
+  ShieldCheck,
+  BadgePercent,
+  Tag,
+  TrendingDown,
+} from "lucide-react";
 
-// --- Zod Validation Schema ---
+// --- Zod Validation Schema (Russian) ---
 const loginSchema = z.object({
   mobile: z.string().refine((val) => {
     const digits = val.replace(/\D/g, "");
     return digits.length === 11 && digits.startsWith("7");
-  }, "Please enter a valid 10-digit mobile number"),
+  }, "Введите корректный 10-значный номер"),
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
-    .regex(/[0-9]/, "Must contain at least one number"),
+    .min(8, "Пароль должен содержать минимум 8 символов")
+    .regex(/[A-Z]/, "Должна быть минимум одна заглавная буква")
+    .regex(/[0-9]/, "Должна быть минимум одна цифра"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -28,7 +39,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { status } = useSession(); // 🚨 NEW: Grab the session status
+  const { status } = useSession();
 
   const callbackUrl = searchParams.get("callbackUrl") || "/profile";
 
@@ -36,7 +47,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // 🚨 NEW: Client-side redirect failsafe
+  // Client-side redirect failsafe
   useEffect(() => {
     if (status === "authenticated") {
       router.replace(callbackUrl);
@@ -91,105 +102,210 @@ export default function LoginPage() {
       });
 
       if (res?.error) {
-        setAuthError("Invalid mobile number or password.");
+        setAuthError("Неверный номер телефона или пароль.");
         setIsLoading(false);
       } else {
         router.push(callbackUrl);
         router.refresh();
       }
     } catch (error) {
-      setAuthError("An unexpected error occurred. Please try again.");
+      setAuthError("Произошла ошибка. Пожалуйста, попробуйте снова.");
       setIsLoading(false);
     }
   };
 
-  // 🚨 NEW: Prevent rendering the login form while checking session
+  // Prevent rendering the login form while checking session
   if (status === "loading" || status === "authenticated") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="animate-spin text-brand-primary h-8 w-8" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="animate-spin text-brand-primary h-10 w-10" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="sm:mx-auto sm:w-full sm:max-w-md"
-      >
-        <div className="mx-auto w-12 h-12 bg-brand-primary rounded-xl flex items-center justify-center shadow-lg shadow-brand-primary/30 mb-6">
-          <span className="text-white font-black text-2xl leading-none">M</span>
-        </div>
-        <h2 className="text-center text-3xl font-black tracking-tight text-slate-900">
-          Welcome back
-        </h2>
-        <p className="mt-2 text-center text-sm text-slate-500">
-          Sign in to your Maachh Express account
-        </p>
-      </motion.div>
+    <div className="min-h-[100dvh] flex flex-col md:flex-row bg-background">
+      {/* ========================================== */}
+      {/* LEFT PANE: BRANDING (Hidden on Mobile)     */}
+      {/* ========================================== */}
+      <div className="hidden md:flex w-1/2 bg-brand-muted relative overflow-hidden items-center justify-center p-8 lg:p-12">
+        {/* Subtle Background Pattern/Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-muted to-slate-900 z-0" />
+        <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-brand-primary/10 blur-[120px] z-0" />
+        <div className="absolute bottom-[10%] -right-[10%] w-[60%] h-[60%] rounded-full bg-brand-secondary/10 blur-[100px] z-0" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
-      >
-        <div className="bg-white py-8 px-4 shadow-xl shadow-slate-200/50 sm:rounded-3xl sm:px-10 border border-slate-100">
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-            {authError && (
-              <div className="p-3 bg-red-50 text-red-600 text-sm font-medium rounded-lg border border-red-100 text-center">
-                {authError}
+        <div className="relative z-10 flex flex-col items-start w-full max-w-xl">
+          <div className="w-16 h-16 bg-brand-primary rounded-2xl flex items-center justify-center shadow-lg shadow-brand-primary/30 mb-8">
+            <BadgePercent className="text-white w-8 h-8" />
+          </div>
+          <h1 className="text-4xl lg:text-5xl font-black text-white leading-tight mb-6">
+            Товары по{" "}
+            <span className="text-brand-secondary">самым низким ценам.</span>
+          </h1>
+          <p className="text-lg text-slate-300 font-medium leading-relaxed mb-10">
+            Получайте доступ к эксклюзивным распродажам и огромным скидкам
+            каждый день. Экономьте больше с каждой покупкой.
+          </p>
+
+          {/* Glassmorphism Feature Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-brand-secondary/20 flex items-center justify-center shrink-0">
+                <Tag className="w-6 h-6 text-brand-secondary" />
               </div>
-            )}
+              <div>
+                <h4 className="text-white font-bold text-sm lg:text-base">
+                  Грандиозные скидки
+                </h4>
+                <p className="text-slate-400 text-xs lg:text-sm mt-0.5">
+                  Ежедневные акции до -70%
+                </p>
+              </div>
+            </motion.div>
 
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-brand-primary/20 flex items-center justify-center shrink-0">
+                <TrendingDown className="w-6 h-6 text-brand-primary" />
+              </div>
+              <div>
+                <h4 className="text-white font-bold text-sm lg:text-base">
+                  Гарантия цены
+                </h4>
+                <p className="text-slate-400 text-xs lg:text-sm mt-0.5">
+                  Самые низкие на рынке
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 sm:col-span-2 hover:bg-white/10 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-6 h-6 text-emerald-400" />
+              </div>
+              <div>
+                <h4 className="text-white font-bold text-sm lg:text-base">
+                  Безопасные покупки
+                </h4>
+                <p className="text-slate-400 text-xs lg:text-sm mt-0.5">
+                  Полная защита платежей и 100% гарантия качества товаров
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================== */}
+      {/* RIGHT PANE: FORM                           */}
+      {/* ========================================== */}
+      <div className="w-full md:w-1/2 flex flex-col  px-6 py-12 sm:px-12 lg:px-24 xl:px-32 relative bg-white dark:bg-slate-950">
+        {/* Mobile Logo (Visible only on small screens) */}
+        <div className="md:hidden flex items-center justify-center mb-8">
+          <div className="w-12 h-12 bg-brand-primary rounded-xl flex items-center justify-center shadow-md">
+            <ShoppingBag className="text-white w-6 h-6" />
+          </div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-sm mx-auto"
+        >
+          <h2 className="text-3xl font-black tracking-tight text-foreground mb-2">
+            С возвращением
+          </h2>
+          <p className="text-sm text-slate-500 font-medium mb-8">
+            Войдите в свой аккаунт для продолжения покупок
+          </p>
+
+          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+            <AnimatePresence>
+              {authError && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 text-sm font-bold rounded-xl border border-red-100 dark:border-red-900/30 text-center mb-5">
+                    {authError}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Mobile Input */}
             <div>
               <label
                 htmlFor="mobile"
-                className="block text-sm font-bold text-slate-700 mb-1.5"
+                className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5"
               >
-                Mobile Number
+                Номер телефона
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <input
                   id="mobile"
                   type="tel"
                   placeholder="+7 999 000 00-00"
-                  className={`block w-full px-4 py-3.5 rounded-xl bg-slate-50 border ${errors.mobile ? "border-red-500 focus:ring-red-500" : "border-slate-200 focus:border-brand-primary focus:ring-brand-primary/20"} focus:outline-none focus:ring-2 transition-all font-medium text-slate-900`}
+                  className={clsx(
+                    "block w-full px-4 py-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-4 transition-all font-semibold text-[15px]",
+                    errors.mobile
+                      ? "border-red-500 focus:ring-red-500/20 text-red-900 dark:text-red-400"
+                      : "border-slate-200 dark:border-slate-800 focus:border-brand-primary focus:ring-brand-primary/10 text-foreground",
+                  )}
                   {...register("mobile")}
                   onChange={handleMobileChange}
                 />
               </div>
               {errors.mobile && (
-                <p className="mt-2 text-sm text-red-500 font-medium">
+                <p className="mt-2 text-xs text-red-500 font-bold ml-1">
                   {errors.mobile.message}
                 </p>
               )}
             </div>
 
+            {/* Password Input */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label
                   htmlFor="password"
-                  className="block text-sm font-bold text-slate-700"
+                  className="block text-sm font-bold text-slate-700 dark:text-slate-300"
                 >
-                  Password
+                  Пароль
                 </label>
                 <Link
                   href="/auth/forgot-password"
-                  className="text-sm font-bold text-brand-primary hover:text-brand-secondary transition-colors"
+                  className="text-xs font-bold text-brand-primary hover:text-brand-primary-hover transition-colors"
                 >
-                  Forgot password?
+                  Забыли пароль?
                 </Link>
               </div>
-              <div className="relative">
+              <div className="relative group">
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className={`block w-full px-4 py-3.5 rounded-xl bg-slate-50 border ${errors.password ? "border-red-500 focus:ring-red-500" : "border-slate-200 focus:border-brand-primary focus:ring-brand-primary/20"} focus:outline-none focus:ring-2 transition-all font-medium text-slate-900 pr-12`}
+                  className={clsx(
+                    "block w-full px-4 py-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-4 transition-all font-semibold text-[15px] pr-12",
+                    errors.password
+                      ? "border-red-500 focus:ring-red-500/20 text-red-900 dark:text-red-400"
+                      : "border-slate-200 dark:border-slate-800 focus:border-brand-primary focus:ring-brand-primary/10 text-foreground",
+                  )}
                   {...register("password")}
                 />
                 <button
@@ -201,44 +317,46 @@ export default function LoginPage() {
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-2 text-sm text-red-500 font-medium">
+                <p className="mt-2 text-xs text-red-500 font-bold ml-1">
                   {errors.password.message}
                 </p>
               )}
             </div>
 
-            <div>
+            {/* Submit Button */}
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-brand-primary/20 text-base font-bold text-white bg-brand-primary hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-xl shadow-lg shadow-brand-primary/25 text-[15px] font-bold text-white bg-brand-primary hover:bg-brand-primary-hover focus:outline-none focus:ring-4 focus:ring-brand-primary/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98]"
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="animate-spin" size={20} /> Signing in...
+                    <Loader2 className="animate-spin" size={20} /> Вход...
                   </>
                 ) : (
                   <>
-                    Sign In <ArrowRight size={20} />
+                    Войти в систему <ArrowRight size={18} />
                   </>
                 )}
               </button>
             </div>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <p className="text-sm text-slate-600 font-medium">
-              Don't have an account?{" "}
+          {/* Bottom Link */}
+          <div className="mt-8 text-center">
+            <p className="text-sm text-slate-500 font-medium">
+              Нет аккаунта?{" "}
               <Link
                 href="/auth/register"
-                className="font-bold text-brand-primary hover:text-brand-secondary transition-colors"
+                className="font-bold text-brand-primary hover:text-brand-primary-hover transition-colors underline-offset-4 hover:underline"
               >
-                Sign up now
+                Зарегистрироваться
               </Link>
             </p>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }

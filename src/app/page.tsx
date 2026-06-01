@@ -83,7 +83,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="container mx-auto max-w-[1400px] px-4 py-8 space-y-12 animate-in fade-in duration-500 bg-[#F5F6F8] dark:bg-slate-950 min-h-screen">
+    <div className="container mx-auto max-w-[1400px] px-4 py-8 space-y-12 animate-in fade-in duration-500 bg-white dark:bg-slate-950 min-h-screen">
       {/* ========================================== */}
       {/* 1. HERO BANNERS AREA                         */}
       {/* ========================================== */}

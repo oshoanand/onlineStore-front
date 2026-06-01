@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { clsx } from "clsx";
 import {
   Eye,
   EyeOff,
@@ -16,24 +17,28 @@ import {
   Phone,
   Mail,
   Lock,
+  ShoppingBag,
+  ShieldCheck,
+  BadgePercent,
+  Tag,
+  TrendingDown,
 } from "lucide-react";
 
 import { useRegisterUser } from "@/services/auth";
 
-// --- Zod Validation Schema ---
+// --- Zod Validation Schema (Russian) ---
 const registerSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
+  fullName: z.string().min(2, "Имя должно содержать не менее 2 символов"),
+  email: z.string().email("Пожалуйста, введите корректный email"),
   mobile: z.string().refine((val) => {
     const digits = val.replace(/\D/g, "");
-    // UI mask forces it to start with 7 and have exactly 11 digits total (7 + 10 digits)
     return digits.length === 11 && digits.startsWith("7");
-  }, "Please enter a valid 10-digit mobile number"),
+  }, "Введите корректный 10-значный номер"),
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
-    .regex(/[0-9]/, "Must contain at least one number"),
+    .min(8, "Пароль должен содержать минимум 8 символов")
+    .regex(/[A-Z]/, "Должна быть минимум одна заглавная буква")
+    .regex(/[0-9]/, "Должна быть минимум одна цифра"),
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -63,7 +68,7 @@ export default function RegisterPage() {
       // On Error: Set the error message
       setServerError(
         error.message ||
-          "Registration failed. This mobile number or email might already exist.",
+          "Не удалось зарегистрироваться. Возможно, этот номер или email уже существует.",
       );
     },
   );
@@ -92,14 +97,9 @@ export default function RegisterPage() {
   // --- Submit Handler ---
   const onSubmit = (data: RegisterFormValues) => {
     setServerError(null);
-
-    // 1. Strip all non-digit formatting
     const cleanMobile = data.mobile.replace(/\D/g, "");
-
-    // 2. Extract ONLY the last 10 digits (dropping the 7)
     const tenDigitMobile = cleanMobile.slice(-10);
 
-    // Fire the mutation
     registerUser({
       name: data.fullName,
       email: data.email,
@@ -109,51 +109,141 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="sm:mx-auto sm:w-full sm:max-w-md"
-      >
-        <div className="mx-auto w-12 h-12 bg-brand-primary rounded-xl flex items-center justify-center shadow-lg shadow-brand-primary/30 mb-6">
-          <span className="text-white font-black text-2xl leading-none">M</span>
+    <div className="min-h-[100dvh] flex flex-col md:flex-row bg-background">
+      {/* ========================================== */}
+      {/* LEFT PANE: BRANDING (Hidden on Mobile)     */}
+      {/* ========================================== */}
+      <div className="hidden md:flex w-1/2 bg-brand-muted relative overflow-hidden items-center justify-center p-8 lg:p-12">
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-muted to-slate-900 z-0" />
+        <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-brand-primary/10 blur-[120px] z-0" />
+        <div className="absolute bottom-[10%] -right-[10%] w-[60%] h-[60%] rounded-full bg-brand-secondary/10 blur-[100px] z-0" />
+
+        <div className="relative z-10 flex flex-col items-start w-full max-w-xl">
+          <div className="w-16 h-16 bg-brand-primary rounded-2xl flex items-center justify-center shadow-lg shadow-brand-primary/30 mb-8">
+            <BadgePercent className="text-white w-8 h-8" />
+          </div>
+          <h1 className="text-4xl lg:text-5xl font-black text-white leading-tight mb-6">
+            Товары по{" "}
+            <span className="text-brand-secondary">самым низким ценам.</span>
+          </h1>
+          <p className="text-lg text-slate-300 font-medium leading-relaxed mb-10">
+            Получайте доступ к эксклюзивным распродажам и огромным скидкам
+            каждый день. Экономьте больше с каждой покупкой.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-brand-secondary/20 flex items-center justify-center shrink-0">
+                <Tag className="w-6 h-6 text-brand-secondary" />
+              </div>
+              <div>
+                <h4 className="text-white font-bold text-sm lg:text-base">
+                  Грандиозные скидки
+                </h4>
+                <p className="text-slate-400 text-xs lg:text-sm mt-0.5">
+                  Ежедневные акции до -70%
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-brand-primary/20 flex items-center justify-center shrink-0">
+                <TrendingDown className="w-6 h-6 text-brand-primary" />
+              </div>
+              <div>
+                <h4 className="text-white font-bold text-sm lg:text-base">
+                  Гарантия цены
+                </h4>
+                <p className="text-slate-400 text-xs lg:text-sm mt-0.5">
+                  Самые низкие на рынке
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 sm:col-span-2 hover:bg-white/10 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-6 h-6 text-emerald-400" />
+              </div>
+              <div>
+                <h4 className="text-white font-bold text-sm lg:text-base">
+                  Безопасные покупки
+                </h4>
+                <p className="text-slate-400 text-xs lg:text-sm mt-0.5">
+                  Полная защита платежей и 100% гарантия качества товаров
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================== */}
+      {/* RIGHT PANE: FORM                           */}
+      {/* ========================================== */}
+      <div className="w-full md:w-1/2 flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-24 xl:px-32 relative bg-brand-surface dark:bg-slate-950 overflow-y-auto">
+        {/* Mobile Logo */}
+        <div className="md:hidden flex items-center justify-center mb-8 mt-4">
+          <div className="w-12 h-12 bg-brand-primary rounded-xl flex items-center justify-center shadow-md">
+            <ShoppingBag className="text-white w-6 h-6" />
+          </div>
         </div>
 
-        <h2 className="text-center text-3xl font-black tracking-tight text-slate-900">
-          Create an account
-        </h2>
-        <p className="mt-2 text-center text-sm text-slate-500">
-          Join Maachh Express for fresh deliveries today
-        </p>
-      </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-sm mx-auto"
+        >
+          <h2 className="text-3xl font-black tracking-tight text-foreground mb-2">
+            Регистрация
+          </h2>
+          <p className="text-sm text-slate-500 font-medium mb-8">
+            Создайте аккаунт, чтобы начать экономить
+          </p>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
-      >
-        <div className="bg-white py-8 px-4 shadow-xl shadow-slate-200/50 sm:rounded-3xl sm:px-10 border border-slate-100">
-          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
-            {serverError && (
-              <div className="p-3 bg-red-50 text-red-600 text-sm font-medium rounded-lg border border-red-100 text-center">
-                {serverError}
-              </div>
-            )}
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <AnimatePresence>
+              {serverError && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 text-sm font-bold rounded-xl border border-red-100 dark:border-red-900/30 text-center mb-4">
+                    {serverError}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* 1. Full Name Field */}
             <div>
               <label
                 htmlFor="fullName"
-                className="block text-sm font-bold text-slate-700 mb-1.5"
+                className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5"
               >
-                Full Name
+                Имя и Фамилия
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <User
-                    size={20}
+                    size={18}
                     className={
                       errors.fullName ? "text-red-400" : "text-slate-400"
                     }
@@ -162,17 +252,18 @@ export default function RegisterPage() {
                 <input
                   id="fullName"
                   type="text"
-                  placeholder="Rahul Sharma"
-                  className={`block w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border ${
+                  placeholder="Иван Иванов"
+                  className={clsx(
+                    "block w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-4 transition-all font-semibold text-[15px]",
                     errors.fullName
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-slate-200 focus:border-brand-primary focus:ring-brand-primary/20"
-                  } focus:outline-none focus:ring-2 transition-all font-medium text-slate-900`}
+                      ? "border-red-500 focus:ring-red-500/20 text-red-900 dark:text-red-400"
+                      : "border-slate-200 dark:border-slate-800 focus:border-brand-primary focus:ring-brand-primary/10 text-foreground",
+                  )}
                   {...register("fullName")}
                 />
               </div>
               {errors.fullName && (
-                <p className="mt-1.5 text-xs text-red-500 font-bold">
+                <p className="mt-1.5 text-xs text-red-500 font-bold ml-1">
                   {errors.fullName.message}
                 </p>
               )}
@@ -182,14 +273,14 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="mobile"
-                className="block text-sm font-bold text-slate-700 mb-1.5"
+                className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5"
               >
-                Mobile Number
+                Номер телефона
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Phone
-                    size={20}
+                    size={18}
                     className={
                       errors.mobile ? "text-red-400" : "text-slate-400"
                     }
@@ -199,51 +290,53 @@ export default function RegisterPage() {
                   id="mobile"
                   type="tel"
                   placeholder="+7 999 000 00-00"
-                  className={`block w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border ${
+                  className={clsx(
+                    "block w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-4 transition-all font-semibold text-[15px]",
                     errors.mobile
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-slate-200 focus:border-brand-primary focus:ring-brand-primary/20"
-                  } focus:outline-none focus:ring-2 transition-all font-medium text-slate-900`}
+                      ? "border-red-500 focus:ring-red-500/20 text-red-900 dark:text-red-400"
+                      : "border-slate-200 dark:border-slate-800 focus:border-brand-primary focus:ring-brand-primary/10 text-foreground",
+                  )}
                   {...register("mobile")}
                   onChange={handleMobileChange}
                 />
               </div>
               {errors.mobile && (
-                <p className="mt-1.5 text-xs text-red-500 font-bold">
+                <p className="mt-1.5 text-xs text-red-500 font-bold ml-1">
                   {errors.mobile.message}
                 </p>
               )}
             </div>
 
-            {/* 3. Email Address Field */}
+            {/* 3. Email Field */}
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-bold text-slate-700 mb-1.5"
+                className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5"
               >
-                Email Address
+                Email
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Mail
-                    size={20}
+                    size={18}
                     className={errors.email ? "text-red-400" : "text-slate-400"}
                   />
                 </div>
                 <input
                   id="email"
                   type="email"
-                  placeholder="rahul@example.com"
-                  className={`block w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border ${
+                  placeholder="ivan@example.com"
+                  className={clsx(
+                    "block w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-4 transition-all font-semibold text-[15px]",
                     errors.email
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-slate-200 focus:border-brand-primary focus:ring-brand-primary/20"
-                  } focus:outline-none focus:ring-2 transition-all font-medium text-slate-900`}
+                      ? "border-red-500 focus:ring-red-500/20 text-red-900 dark:text-red-400"
+                      : "border-slate-200 dark:border-slate-800 focus:border-brand-primary focus:ring-brand-primary/10 text-foreground",
+                  )}
                   {...register("email")}
                 />
               </div>
               {errors.email && (
-                <p className="mt-1.5 text-xs text-red-500 font-bold">
+                <p className="mt-1.5 text-xs text-red-500 font-bold ml-1">
                   {errors.email.message}
                 </p>
               )}
@@ -253,14 +346,14 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-bold text-slate-700 mb-1.5"
+                className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5"
               >
-                Password
+                Пароль
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Lock
-                    size={20}
+                    size={18}
                     className={
                       errors.password ? "text-red-400" : "text-slate-400"
                     }
@@ -270,11 +363,12 @@ export default function RegisterPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className={`block w-full pl-11 pr-12 py-3.5 rounded-xl bg-slate-50 border ${
+                  className={clsx(
+                    "block w-full pl-11 pr-12 py-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-4 transition-all font-semibold text-[15px]",
                     errors.password
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-slate-200 focus:border-brand-primary focus:ring-brand-primary/20"
-                  } focus:outline-none focus:ring-2 transition-all font-medium text-slate-900`}
+                      ? "border-red-500 focus:ring-red-500/20 text-red-900 dark:text-red-400"
+                      : "border-slate-200 dark:border-slate-800 focus:border-brand-primary focus:ring-brand-primary/10 text-foreground",
+                  )}
                   {...register("password")}
                 />
                 <button
@@ -282,31 +376,31 @@ export default function RegisterPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-brand-primary transition-colors focus:outline-none"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1.5 text-xs text-red-500 font-bold">
+                <p className="mt-1.5 text-xs text-red-500 font-bold ml-1">
                   {errors.password.message}
                 </p>
               )}
             </div>
 
             {/* Submit Button */}
-            <div className="pt-2">
+            <div className="pt-4">
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-brand-primary/20 text-base font-bold text-white bg-brand-primary hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-xl shadow-lg shadow-brand-primary/25 text-[15px] font-bold text-white bg-brand-primary hover:bg-brand-primary-hover focus:outline-none focus:ring-4 focus:ring-brand-primary/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98]"
               >
                 {isPending ? (
                   <>
-                    <Loader2 className="animate-spin" size={20} />
-                    Creating account...
+                    <Loader2 className="animate-spin" size={20} /> Создание
+                    аккаунта...
                   </>
                 ) : (
                   <>
-                    Create Account <ArrowRight size={20} />
+                    Зарегистрироваться <ArrowRight size={18} />
                   </>
                 )}
               </button>
@@ -314,19 +408,19 @@ export default function RegisterPage() {
           </form>
 
           {/* Login Link */}
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <p className="text-sm text-slate-600 font-medium">
-              Already have an account?{" "}
+          <div className="mt-8 text-center pb-8">
+            <p className="text-sm text-slate-500 font-medium">
+              Уже есть аккаунт?{" "}
               <Link
                 href="/auth/login"
-                className="font-bold text-brand-primary hover:text-brand-secondary transition-colors"
+                className="font-bold text-brand-primary hover:text-brand-primary-hover transition-colors underline-offset-4 hover:underline"
               >
-                Sign in here
+                Войти
               </Link>
             </p>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }

@@ -103,7 +103,7 @@ export const fetchUserProfile = async () => {
   ) {
     response.data.addresses = response.data.customerProfile.addresses;
   }
-
+  console.log("Fetched User Profile:", response);
   return response;
 };
 

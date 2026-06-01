@@ -15,9 +15,12 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    // We only want to fetch the session on the client side
     if (typeof window !== "undefined") {
       const session = await getSession();
-      const token = session?.accessToken;
+
+      // Safely extract the token from session.user using Type Assertion
+      const token = (session?.user as any)?.accessToken;
 
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
