@@ -108,7 +108,6 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} antialiased`}>
         <Providers>
-          {" "}
           <ClientLayout>{children}</ClientLayout>
         </Providers>
       </body>

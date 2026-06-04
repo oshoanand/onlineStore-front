@@ -1,10 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
-  ShoppingCart,
-  Heart,
   ShieldCheck,
   Truck,
   CreditCard,
@@ -12,12 +12,13 @@ import {
   Flame,
   Sparkles,
   Percent,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { getImageUrl } from "@/utils/image";
 import { usePublicGroupedProducts } from "@/services/product";
-import { useCartStore } from "@/store/useCartStore";
-import { useToast } from "@/hooks/useToast";
+import { ProductCard } from "@/components/product/ProductCard";
 
 // Map backend tags to beautiful UI headers & icons
 const TAG_UI_MAP: Record<string, { title: string; icon: any; color: string }> =
@@ -25,17 +26,20 @@ const TAG_UI_MAP: Record<string, { title: string; icon: any; color: string }> =
     Bestseller: {
       title: "Хиты продаж",
       icon: Flame,
-      color: "text-[#F33939] fill-[#F33939]",
+      color: "text-red-500 fill-red-500",
     },
     New: {
       title: "Новинки",
       icon: Sparkles,
-      color: "text-[#005BFF] fill-[#005BFF]",
+      color: "text-brand-primary fill-brand-primary",
     },
-    Sale: { title: "Распродажа", icon: Percent, color: "text-[#00B15C]" },
+    Sale: {
+      title: "Распродажа",
+      icon: Percent,
+      color: "text-brand-secondary",
+    },
   };
 
-// Dummy categories styled like Yandex Market quick links
 const POPULAR_CATEGORIES = [
   { id: 1, name: "Кроссовки", image: "👟", slug: "shoes" },
   { id: 2, name: "Одежда", image: "👕", slug: "clothing" },
@@ -46,7 +50,7 @@ const POPULAR_CATEGORIES = [
 ];
 
 export default function HomePage() {
-  // Fetch products via React Query using your API Client
+  // Fetch grouped products
   const { data: response, isLoading } = usePublicGroupedProducts([
     "Bestseller",
     "New",
@@ -55,105 +59,116 @@ export default function HomePage() {
   const groupedProducts = response?.data || {};
   const tags = Object.keys(groupedProducts);
 
-  // Zustand Cart Store
-  const addItem = useCartStore((state) => state.addItem);
-  const { toast } = useToast();
+  // Isolate products specifically for the Hero Carousel
+  const heroProducts =
+    groupedProducts["New"] || groupedProducts["Bestseller"] || [];
 
-  const handleAddToCart = (
-    e: React.MouseEvent,
-    product: any,
-    currentPrice: number,
-  ) => {
-    e.preventDefault(); // Prevents the Link navigation when clicking the button
-    e.stopPropagation();
+  // --- Framer Motion Carousel State ---
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-    addItem({
-      productId: product.id,
-      name: product.name,
-      price: currentPrice,
-      quantity: 1,
-      imageUrl: product.thumbImage ? getImageUrl(product.thumbImage) : "",
-    });
-
-    toast({
-      title: "Добавлено в корзину",
-      description: `${product.name} успешно добавлен.`,
-      variant: "success",
-    });
+  const nextSlide = () => {
+    if (heroProducts.length === 0) return;
+    setCurrentSlide((prev) => (prev >= heroProducts.length - 1 ? 0 : prev + 1));
   };
 
-  return (
-    <div className="container mx-auto max-w-[1400px] px-4 py-8 space-y-12 animate-in fade-in duration-500 bg-white dark:bg-slate-950 min-h-screen">
-      {/* ========================================== */}
-      {/* 1. HERO BANNERS AREA                         */}
-      {/* ========================================== */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-        <div className="lg:col-span-2 bg-[#1A1A1A] rounded-[32px] p-8 lg:p-14 flex flex-col justify-center items-start min-h-[420px] relative overflow-hidden text-white group cursor-pointer">
-          <div className="absolute right-[-10%] bottom-[-20%] w-[600px] h-[600px] bg-gradient-to-tl from-[#FCE000]/40 to-transparent rounded-full blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-700" />
+  const prevSlide = () => {
+    if (heroProducts.length === 0) return;
+    setCurrentSlide((prev) => (prev <= 0 ? heroProducts.length - 1 : prev - 1));
+  };
 
-          <div className="bg-[#F33939] text-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest rounded-lg mb-6 z-10">
-            Мега Распродажа
+  // Auto-slide effect for the Hero Carousel
+  useEffect(() => {
+    if (heroProducts.length === 0) return;
+    const timer = setInterval(nextSlide, 5000);
+    return () => clearInterval(timer);
+  }, [heroProducts.length]);
+
+  return (
+    <div className="container mx-auto max-w-[1400px]  space-y-12 animate-in fade-in duration-500 bg-background min-h-screen">
+      {/* ========================================== */}
+      {/* 1. HERO PRODUCT CAROUSEL (Framer Motion)     */}
+      {/* ========================================== */}
+      <section className="bg-brand-muted dark:bg-slate-950 p-8 lg:p-12 flex flex-col lg:flex-row items-center gap-12 overflow-hidden relative min-h-[480px] shadow-lg shadow-brand-muted/10 border border-transparent dark:border-white/5">
+        {/* Background ambient glow */}
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-brand-primary/20 rounded-full blur-[100px] pointer-events-none" />
+
+        {/* LEFT: Promotions & Controls */}
+        <div className="lg:w-1/3 z-10 flex flex-col items-start w-full">
+          <div className="bg-brand-secondary text-brand-muted px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg mb-6 shadow-sm">
+            Новая Коллекция
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-4 z-10 leading-[1.05] tracking-tight">
-            Летняя <br /> Коллекция 2026
+          <h1 className="text-4xl lg:text-5xl xl:text-6xl font-black mb-6 text-white leading-[1.05] tracking-tight">
+            Тренды <br /> Сезона
           </h1>
-          <p className="text-[#A6A6A6] mb-10 max-w-md z-10 text-lg leading-snug">
-            Скидки до 50% на кроссовки, одежду для бега и аксессуары для
-            активного отдыха.
+          <p className="text-slate-400 mb-8 text-base lg:text-lg leading-snug">
+            Откройте для себя эксклюзивные новинки и популярные хиты.
+            Премиальное качество уже в наличии.
           </p>
-          <Button
-            size="lg"
-            className="bg-[#FCE000] hover:bg-[#F2D600] text-black text-base px-8 h-14 rounded-2xl z-10 font-bold transition-transform active:scale-95"
-          >
-            Смотреть каталог
-          </Button>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link href="/category">
+              <Button className="bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl px-8 h-12 font-bold shadow-lg shadow-brand-primary/20 transition-all active:scale-95">
+                В каталог
+              </Button>
+            </Link>
+
+            {/* Carousel Navigation Arrows */}
+            <div className="flex gap-2">
+              <button
+                onClick={prevSlide}
+                className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white hover:bg-brand-primary transition-colors backdrop-blur-md"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={nextSlide}
+                className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white hover:bg-brand-primary transition-colors backdrop-blur-md"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-4 lg:gap-6">
-          <div className="flex-1 bg-[#E8F0FE] dark:bg-slate-900 rounded-[32px] p-8 flex flex-col justify-center group cursor-pointer overflow-hidden relative transition-shadow hover:shadow-lg">
-            <div className="z-10">
-              <h3 className="text-3xl font-black mb-2 text-slate-900 dark:text-white tracking-tight">
-                Новинки Nike
-              </h3>
-              <p className="text-[15px] text-slate-600 dark:text-slate-400 mb-6 font-medium">
-                Уже в наличии
-              </p>
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm group-hover:bg-[#FCE000] group-hover:text-black transition-colors">
-                <ArrowRight className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
-          <div className="flex-1 bg-[#FEECEC] dark:bg-red-950/20 rounded-[32px] p-8 flex flex-col justify-center group cursor-pointer overflow-hidden relative transition-shadow hover:shadow-lg">
-            <div className="z-10">
-              <h3 className="text-3xl font-black mb-2 text-[#F33939] tracking-tight">
-                Sale -30%
-              </h3>
-              <p className="text-[15px] text-slate-600 dark:text-slate-400 mb-6 font-medium">
-                На велосипеды и самокаты
-              </p>
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white dark:bg-slate-800 text-[#F33939] shadow-sm group-hover:bg-[#F33939] group-hover:text-white transition-colors">
-                <ArrowRight className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
+        {/* RIGHT: Framer Motion Multiple Product Carousel */}
+        <div className="lg:w-2/3 w-full z-10 overflow-hidden pr-4 lg:pr-0 pb-4">
+          <motion.div
+            className="flex gap-6"
+            // 280px (card width) + 24px (gap-6) = 304px shift per slide
+            animate={{ x: -(currentSlide * 304) }}
+            transition={{ type: "spring", stiffness: 250, damping: 30 }}
+          >
+            {isLoading
+              ? // Loading Skeletons
+                [1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="w-[280px] h-[380px] shrink-0 bg-white/5 animate-pulse rounded-2xl border border-white/5"
+                  />
+                ))
+              : heroProducts.map((product: any) => (
+                  <div key={product.id} className="w-[280px] shrink-0">
+                    <ProductCard product={product} />
+                  </div>
+                ))}
+          </motion.div>
         </div>
       </section>
 
       {/* ========================================== */}
-      {/* 2. POPULAR CATEGORIES (Yandex Style)         */}
+      {/* 2. POPULAR CATEGORIES                        */}
       {/* ========================================== */}
-      <section>
-        <h2 className="text-[28px] font-black tracking-tight mb-6 text-slate-900 dark:text-white">
+      <section className="px-4">
+        <h2 className="text-[28px]  font-black tracking-tight mb-6 text-foreground">
           Популярные категории
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4">
           {POPULAR_CATEGORIES.map((category) => (
-            <Link href={`/category/${category.slug}`} key={category.id}>
-              <div className="bg-white dark:bg-slate-900 rounded-[24px] p-4 flex flex-col h-[120px] justify-between group hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300">
-                <span className="font-bold text-[15px] text-slate-900 dark:text-white leading-tight group-hover:text-[#F33939] transition-colors">
+            <Link href={`/search?category=${category.slug}`} key={category.id}>
+              <div className="bg-brand-surface dark:bg-brand-muted border border-slate-200 dark:border-white/5 rounded-[24px] p-4 flex flex-col h-[120px] justify-between group hover:shadow-lg hover:shadow-brand-primary/5 transition-all duration-300">
+                <span className="font-bold text-[15px] text-foreground leading-tight group-hover:text-brand-primary transition-colors">
                   {category.name}
                 </span>
-                <span className="text-4xl self-end transform group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300">
+                <span className="text-4xl self-end transform group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-300">
                   {category.image}
                 </span>
               </div>
@@ -166,155 +181,56 @@ export default function HomePage() {
       {/* 3. DYNAMIC PRODUCT GROUPS                    */}
       {/* ========================================== */}
 
-      {/* Loading Skeleton */}
+      {/* Group Loading Skeleton */}
       {isLoading && (
-        <section className="space-y-6">
-          <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-lg"></div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-5">
+        <section className="space-y-6 px-4">
+          <div className="h-8 w-48 bg-slate-200 dark:bg-brand-muted animate-pulse rounded-lg"></div>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="h-[360px] bg-white dark:bg-slate-900 animate-pulse rounded-[24px]"
+                className="h-[360px] bg-slate-100 dark:bg-brand-muted animate-pulse rounded-[24px]"
               ></div>
             ))}
           </div>
         </section>
       )}
 
-      {/* Render Data */}
+      {/* Render Product Groups */}
       {!isLoading &&
         tags.map((tag) => {
           const products = groupedProducts[tag] || [];
           if (products.length === 0) return null;
 
-          // Slice to EXACTLY 4 products per user request
+          // Slice to EXACTLY 4 products to fit perfectly in a 4-col grid
           const displayProducts = products.slice(0, 4);
           const uiConfig = TAG_UI_MAP[tag] || {
             title: tag,
             icon: Flame,
-            color: "text-slate-900 dark:text-white",
+            color: "text-foreground",
           };
           const Icon = uiConfig.icon;
 
           return (
-            <section key={tag}>
+            <section key={tag} className="pt-4 px-4">
               <div className="flex items-center justify-between gap-3 mb-6">
-                <h2 className="text-[28px] font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                  <Icon className={`h-7 w-7 ${uiConfig.color}`} />{" "}
+                <h2 className="text-[26px] md:text-[28px] font-black tracking-tight text-foreground flex items-center gap-2.5">
+                  <Icon className={`h-7 w-7 ${uiConfig.color}`} />
                   {uiConfig.title}
                 </h2>
                 <Link
                   href={`/search?tag=${tag}`}
-                  className="text-[15px] font-semibold text-blue-600 hover:text-blue-800 flex items-center transition-colors"
+                  className="text-[15px] font-bold text-brand-primary hover:text-brand-primary-hover flex items-center transition-colors group"
                 >
-                  Все <ArrowRight className="ml-1 h-4 w-4" />
+                  Все{" "}
+                  <ArrowRight className="ml-1 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
 
-              {/* Adjusted grid to strictly 4 columns */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-5">
-                {displayProducts.map((product: any) => {
-                  const hasDiscount =
-                    product.discountedPrice &&
-                    product.discountedPrice < product.price;
-                  const discountPercent = hasDiscount
-                    ? Math.round(
-                        ((Number(product.price) -
-                          Number(product.discountedPrice)) /
-                          Number(product.price)) *
-                          100,
-                      )
-                    : 0;
-
-                  const currentPrice = Number(
-                    product.discountedPrice || product.price,
-                  );
-                  const oldPrice = product.discountedPrice
-                    ? Number(product.price)
-                    : null;
-
-                  return (
-                    <Link
-                      href={`/product/${product.slug}`}
-                      key={product.id}
-                      className="group flex flex-col bg-white dark:bg-slate-900 rounded-[24px] p-4 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 relative h-full"
-                    >
-                      {/* NEW TAG (Optional extra tag layout) */}
-                      {product.tags?.includes("New") && !hasDiscount && (
-                        <div className="absolute top-4 left-4 z-10 bg-[#005BFF] text-white font-bold px-2 py-0.5 rounded-full text-[11px] tracking-wide pointer-events-none">
-                          Новинка
-                        </div>
-                      )}
-
-                      {/* Wishlist Button - Prevent default so it doesn't trigger Link */}
-                      <button
-                        onClick={(e) => e.preventDefault()}
-                        className="absolute top-3 right-3 z-10 p-2 rounded-full text-slate-300 hover:text-[#F33939] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <Heart
-                          className="h-[22px] w-[22px]"
-                          strokeWidth={2.5}
-                        />
-                      </button>
-
-                      {/* Product Image */}
-                      <div className="relative aspect-square w-full rounded-[16px] overflow-hidden mb-4 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
-                        {product.thumbImage ? (
-                          <img
-                            src={getImageUrl(product.thumbImage)}
-                            alt={product.name}
-                            className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform duration-500"
-                          />
-                        ) : (
-                          <ShoppingCart className="h-12 w-12 text-slate-200 dark:text-slate-700" />
-                        )}
-                      </div>
-
-                      {/* Product Info */}
-                      <div className="flex flex-col flex-1">
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mb-1 font-semibold uppercase tracking-wider">
-                          {product.brand || "Бренд не указан"}
-                        </div>
-
-                        <div className="text-[14px] leading-[18px] text-slate-700 dark:text-slate-300 group-hover:text-[#F33939] line-clamp-2 mb-4 font-medium transition-colors">
-                          {product.name}
-                        </div>
-
-                        {/* Unified Price Row */}
-                        <div className="flex flex-wrap items-center gap-2 mb-4 mt-auto">
-                          <span
-                            className={`text-[22px] font-black leading-none tracking-tight ${hasDiscount ? "text-[#F33939]" : "text-slate-900 dark:text-white"}`}
-                          >
-                            {currentPrice.toLocaleString("ru-RU")} ₽
-                          </span>
-
-                          {oldPrice && (
-                            <span className="text-[13px] text-slate-400 line-through leading-none font-medium">
-                              {oldPrice.toLocaleString("ru-RU")} ₽
-                            </span>
-                          )}
-
-                          {hasDiscount && (
-                            <div className="bg-[#F33939] text-white font-bold px-1.5 py-[2px] rounded text-[11px] leading-none tracking-wide">
-                              -{discountPercent}%
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Add to Cart Button (Intercepts click) */}
-                        <button
-                          onClick={(e) =>
-                            handleAddToCart(e, product, currentPrice)
-                          }
-                          className="w-full bg-[#FCE000] hover:bg-[#F2D600] active:scale-[0.98] text-black font-bold py-3 rounded-2xl transition-all flex items-center justify-center gap-2"
-                        >
-                          <ShoppingCart className="h-4 w-4" strokeWidth={2.5} />
-                          В корзину
-                        </button>
-                      </div>
-                    </Link>
-                  );
-                })}
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                {displayProducts.map((product: any) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
               </div>
             </section>
           );
@@ -323,49 +239,52 @@ export default function HomePage() {
       {/* ========================================== */}
       {/* 4. STORE BENEFITS                            */}
       {/* ========================================== */}
-      <section className="bg-white dark:bg-slate-900 rounded-[32px] p-8 lg:p-10 shadow-sm border border-slate-100 dark:border-slate-800 mt-12">
+      <section className="bg-brand-surface dark:bg-brand-muted p-4 lg:p-10 shadow-sm border border-slate-200 dark:border-white/5 mt-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="flex flex-col gap-3">
-            <div className="h-14 w-14 rounded-2xl bg-[#E8F0FE] dark:bg-blue-900/30 text-[#005BFF] flex items-center justify-center mb-2">
+            <div className="h-14 w-14 rounded-2xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-2">
               <ShieldCheck className="h-7 w-7" strokeWidth={2} />
             </div>
-            <h4 className="font-bold text-[17px] text-slate-900 dark:text-white leading-tight">
+            <h4 className="font-bold text-[17px] text-foreground leading-tight">
               Оригинальные бренды
             </h4>
-            <p className="text-[14px] text-slate-500 leading-snug">
+            <p className="text-[14px] text-slate-500 dark:text-slate-400 leading-snug">
               Только сертифицированная продукция с официальной гарантией.
             </p>
           </div>
+
           <div className="flex flex-col gap-3">
-            <div className="h-14 w-14 rounded-2xl bg-[#E8F0FE] dark:bg-blue-900/30 text-[#005BFF] flex items-center justify-center mb-2">
+            <div className="h-14 w-14 rounded-2xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-2">
               <Truck className="h-7 w-7" strokeWidth={2} />
             </div>
-            <h4 className="font-bold text-[17px] text-slate-900 dark:text-white leading-tight">
+            <h4 className="font-bold text-[17px] text-foreground leading-tight">
               Быстрая доставка
             </h4>
-            <p className="text-[14px] text-slate-500 leading-snug">
+            <p className="text-[14px] text-slate-500 dark:text-slate-400 leading-snug">
               Доставляем заказы курьером и в тысячи пунктов выдачи.
             </p>
           </div>
+
           <div className="flex flex-col gap-3">
-            <div className="h-14 w-14 rounded-2xl bg-[#E8F0FE] dark:bg-blue-900/30 text-[#005BFF] flex items-center justify-center mb-2">
+            <div className="h-14 w-14 rounded-2xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-2">
               <RefreshCw className="h-7 w-7" strokeWidth={2} />
             </div>
-            <h4 className="font-bold text-[17px] text-slate-900 dark:text-white leading-tight">
+            <h4 className="font-bold text-[17px] text-foreground leading-tight">
               Простой возврат
             </h4>
-            <p className="text-[14px] text-slate-500 leading-snug">
+            <p className="text-[14px] text-slate-500 dark:text-slate-400 leading-snug">
               Удобный возврат неподошедшего товара в течение 14 дней.
             </p>
           </div>
+
           <div className="flex flex-col gap-3">
-            <div className="h-14 w-14 rounded-2xl bg-[#E8F0FE] dark:bg-blue-900/30 text-[#005BFF] flex items-center justify-center mb-2">
+            <div className="h-14 w-14 rounded-2xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-2">
               <CreditCard className="h-7 w-7" strokeWidth={2} />
             </div>
-            <h4 className="font-bold text-[17px] text-slate-900 dark:text-white leading-tight">
+            <h4 className="font-bold text-[17px] text-foreground leading-tight">
               Безопасная оплата
             </h4>
-            <p className="text-[14px] text-slate-500 leading-snug">
+            <p className="text-[14px] text-slate-500 dark:text-slate-400 leading-snug">
               Защищенная оплата картой онлайн или при получении заказа.
             </p>
           </div>

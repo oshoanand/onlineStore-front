@@ -124,7 +124,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col md:flex-row bg-background">
+    <div className="min-h-[100dvh] flex flex-col md:flex-row bg-white">
       {/* ========================================== */}
       {/* LEFT PANE: BRANDING (Hidden on Mobile)     */}
       {/* ========================================== */}
@@ -226,10 +226,10 @@ export default function LoginPage() {
           transition={{ duration: 0.5 }}
           className="w-full max-w-sm mx-auto"
         >
-          <h2 className="text-3xl font-black tracking-tight text-foreground mb-2">
+          {/* <h2 className="text-3xl font-black tracking-tight text-foreground mb-2">
             С возвращением
-          </h2>
-          <p className="text-sm text-slate-500 font-medium mb-8">
+          </h2> */}
+          <p className="text-sm text-slate-600 font-medium mb-8">
             Войдите в свой аккаунт для продолжения покупок
           </p>
 

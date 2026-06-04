@@ -33,7 +33,7 @@ export const ChatHeader = ({
   typingUser: string | null;
   onBack: () => void;
 }) => (
-  <header className="flex items-center gap-3 p-4 pt-safe border-b border-border/50 bg-card shrink-0  z-20 sm:rounded-tr-2xl">
+  <header className="flex items-center gap-3 py-2  border-b border-slate-200  bg-card shrink-0  z-20 sm:rounded-tr-2xl">
     {/* Only show Back button on Mobile */}
     <button
       onClick={onBack}
@@ -58,7 +58,7 @@ export const ChatHeader = ({
           В сети
         </p>
       ) : (
-        <p className="text-[11px] text-muted-foreground truncate font-medium mt-0.5">
+        <p className="text-[11px] text-gray-500 truncate font-medium mt-0.5">
           Был(а){" "}
           {lastSeen
             ? formatDistanceToNow(new Date(lastSeen), {

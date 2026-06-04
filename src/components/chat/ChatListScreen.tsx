@@ -273,6 +273,7 @@ function ChatListItem({
   onClick: () => void;
 }) {
   const lastActive = realTimeLastSeen || chat.lastSeen;
+  console.log(chat);
 
   return (
     <div
@@ -290,7 +291,7 @@ function ChatListItem({
             "w-12 h-12 rounded-full overflow-hidden transition-all shadow-sm",
             isOnline
               ? "ring-2 ring-green-500/50"
-              : "bg-muted border border-border",
+              : "bg-muted border border-gray-200",
           )}
         >
           {chat.partnerImage ? (
